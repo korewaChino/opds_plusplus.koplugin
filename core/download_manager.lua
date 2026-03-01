@@ -43,7 +43,7 @@ end
 -- @return string Download directory path
 function DownloadManager.getCurrentDownloadDir(browser)
 	if browser.sync then
-		return browser.settings.sync_dir
+		return browser.root_catalog_sync_dir or browser.settings.sync_dir
 	else
 		return G_reader_settings:readSetting("download_dir") or G_reader_settings:readSetting("lastdir")
 	end

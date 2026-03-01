@@ -23,6 +23,7 @@ function CatalogUtils.buildRootEntry(server)
 		raw_names  = server.raw_names,
 		searchable = server.url and server.url:match("%%s") and true or false,
 		sync       = server.sync,
+		sync_dir   = server.sync_dir,
 	}
 end
 

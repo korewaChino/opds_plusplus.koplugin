@@ -63,6 +63,7 @@ local OPDSBrowser = OPDSCoverMenu:extend {
     root_catalog_title       = nil,
     root_catalog_username    = nil,
     root_catalog_password    = nil,
+    root_catalog_sync_dir    = nil,
     facet_groups             = nil,
 
     title_shrink_font_to_fit = true,
@@ -275,6 +276,7 @@ function OPDSBrowser:onMenuSelect(item)
             self.root_catalog_username  = item.username
             self.root_catalog_password  = item.password
             self.root_catalog_raw_names = item.raw_names
+            self.root_catalog_sync_dir  = item.sync_dir
         end
         local connect_callback
         if item.searchable then

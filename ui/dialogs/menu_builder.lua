@@ -251,6 +251,9 @@ function OPDSMenuBuilder.buildCatalogEditDialog(browser, item)
 			hint = _("Password (optional)"),
 			text_type = "password",
 		},
+		{
+			hint = _("Sync directory (optional)"),
+		},
 	}
 
 	local title
@@ -260,6 +263,7 @@ function OPDSMenuBuilder.buildCatalogEditDialog(browser, item)
 		fields[2].text = item.url
 		fields[3].text = item.username
 		fields[4].text = item.password
+		fields[5].text = item.sync_dir
 	else
 		title = _("Add OPDS catalog")
 	end
@@ -280,10 +284,10 @@ function OPDSMenuBuilder.buildCatalogEditDialog(browser, item)
 				{
 					text = _("Save"),
 					callback = function()
-						local new_fields = dialog:getFields()
+						local text_fields = dialog:getFields()
 
 						-- Validate URL before saving
-						local is_valid, validated_url_or_error = CatalogManager.validateCatalogUrl(new_fields[2])
+						local is_valid, validated_url_or_error = CatalogManager.validateCatalogUrl(text_fields[2])
 
 						if not is_valid then
 							-- Show error message
@@ -295,7 +299,7 @@ function OPDSMenuBuilder.buildCatalogEditDialog(browser, item)
 						end
 
 						-- Validate catalog name
-						if not new_fields[1] or new_fields[1]:match("^%s*$") then
+						if not text_fields[1] or text_fields[1]:match("^%s*$") then
 							UIManager:show(InfoMessage:new {
 								text = _("Catalog name cannot be empty"),
 								timeout = 3,
@@ -303,10 +307,17 @@ function OPDSMenuBuilder.buildCatalogEditDialog(browser, item)
 							return
 						end
 
-						-- Use validated URL
-						new_fields[2] = validated_url_or_error
-						new_fields[5] = check_button_raw_names.checked or nil
-						new_fields[6] = check_button_sync_catalog.checked or nil
+						-- Build fields array for editCatalogFromInput
+						-- [1]=title, [2]=url, [3]=username, [4]=password, [5]=raw_names, [6]=sync, [7]=sync_dir
+						local new_fields = {
+							text_fields[1],                               -- title
+							validated_url_or_error,                       -- url (validated)
+							text_fields[3],                               -- username
+							text_fields[4],                               -- password
+							check_button_raw_names.checked or nil,        -- raw_names
+							check_button_sync_catalog.checked or nil,     -- sync
+							text_fields[5],                               -- sync_dir
+						}
 						browser:editCatalogFromInput(new_fields, item)
 						UIManager:close(dialog)
 					end,
@@ -333,12 +344,42 @@ end
 -- Build the add sub-catalog dialog
 -- @param browser table OPDSBrowser instance
 -- @param item_url string Catalog URL to add
--- @return table InputDialog widget
+-- @return table MultiInputDialog widget
 function OPDSMenuBuilder.buildSubCatalogDialog(browser, item_url)
-	local dialog
-	dialog = InputDialog:new {
+	local util = require("util")
+
+	-- Compute default catalog name
+	local default_name = browser.root_catalog_title or ""
+	if browser.catalog_title then
+		default_name = default_name .. " - " .. browser.catalog_title
+	end
+
+	-- Compute default sync_dir: parent catalog's sync_dir / current feed title
+	-- Falls back to global sync_dir if no per-catalog sync_dir is set
+	local parent_sync_dir = browser.root_catalog_sync_dir or browser.settings.sync_dir
+	local default_sync_dir = ""
+	if parent_sync_dir and browser.catalog_title then
+		local sanitized_title = util.replaceAllInvalidChars(browser.catalog_title)
+		default_sync_dir = parent_sync_dir .. "/" .. sanitized_title
+	elseif parent_sync_dir then
+		default_sync_dir = parent_sync_dir
+	end
+
+	local fields = {
+		{
+			text = default_name,
+			hint = _("Catalog name"),
+		},
+		{
+			text = default_sync_dir ~= "" and default_sync_dir or nil,
+			hint = _("Sync directory (optional)"),
+		},
+	}
+
+	local dialog, check_button_sync_catalog
+	dialog = MultiInputDialog:new {
 		title = _("Add OPDS catalog"),
-		input = browser.root_catalog_title .. " - " .. browser.catalog_title,
+		fields = fields,
 		buttons = {
 			{
 				{
@@ -352,23 +393,38 @@ function OPDSMenuBuilder.buildSubCatalogDialog(browser, item_url)
 					text = _("Save"),
 					is_enter_default = true,
 					callback = function()
-						local name = dialog:getInputText()
-						if name ~= "" then
-							UIManager:close(dialog)
-							local fields = {
-								name,
-								item_url,
-								browser.root_catalog_username,
-								browser.root_catalog_password,
-								browser.root_catalog_raw_names
-							}
-							browser:editCatalogFromInput(fields, nil, true)
+						local text_fields = dialog:getFields()
+						local name = text_fields[1]
+						if name == "" then return end
+
+						-- Create sync directory if specified and doesn't exist
+						local sync_dir = text_fields[2]
+						if sync_dir and sync_dir ~= "" then
+							util.makePath(sync_dir)
 						end
+
+						UIManager:close(dialog)
+						local save_fields = {
+							name,                                         -- [1] title
+							item_url,                                     -- [2] url
+							browser.root_catalog_username,                -- [3] username
+							browser.root_catalog_password,                -- [4] password
+							browser.root_catalog_raw_names,               -- [5] raw_names
+							check_button_sync_catalog.checked or nil,     -- [6] sync
+							sync_dir,                                     -- [7] sync_dir
+						}
+						browser:editCatalogFromInput(save_fields, nil, true)
 					end,
 				},
 			},
 		},
 	}
+	check_button_sync_catalog = CheckButton:new {
+		text = _("Sync catalog"),
+		checked = false,
+		parent = dialog,
+	}
+	dialog:addWidget(check_button_sync_catalog)
 
 	return dialog
 end

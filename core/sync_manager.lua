@@ -113,11 +113,27 @@ end
 -- @param browser table OPDSBrowser instance
 -- @param server_idx number|nil Index of specific server to sync (nil for all)
 function SyncManager.checkAndStartSync(browser, server_idx)
+	-- Check if sync is configured: need global sync_dir OR per-catalog sync_dir
 	if not browser.settings.sync_dir then
-		UIManager:show(InfoMessage:new {
-			text = _("Please choose a folder for sync downloads first"),
-		})
-		return
+		local has_catalog_sync_dir = false
+		if server_idx then
+			local server = browser.servers[server_idx - 1]
+			has_catalog_sync_dir = server and server.sync_dir
+		else
+			for i, server in ipairs(browser.servers) do
+				if server.sync and server.sync_dir then
+					has_catalog_sync_dir = true
+					break
+				end
+			end
+		end
+
+		if not has_catalog_sync_dir then
+			UIManager:show(InfoMessage:new {
+				text = _("Please choose a folder for sync downloads first"),
+			})
+			return
+		end
 	end
 
 	browser.sync = true
@@ -163,6 +179,7 @@ function SyncManager.fillPendingSyncs(browser, server)
 	browser.root_catalog_raw_names = server.raw_names
 	browser.root_catalog_username  = server.username
 	browser.root_catalog_title     = server.title
+	browser.root_catalog_sync_dir  = server.sync_dir
 	browser.sync_server            = server
 	browser.sync_server_list       = browser.sync_server_list or {}
 	browser.sync_max_dl            = browser.settings.sync_max_dl or Constants.SYNC.DEFAULT_MAX_DOWNLOADS
