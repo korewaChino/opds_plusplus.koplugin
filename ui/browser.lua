@@ -474,7 +474,11 @@ end
 function OPDSBrowser:getFileName(item)
     local filename = item.title
     if item.author then
-        filename = item.author .. " - " .. filename
+        if self.settings.filename_title_first then
+            filename = filename .. " - " .. item.author
+        else
+            filename = item.author .. " - " .. filename
+        end
     end
     local filename_orig = filename
     if self.root_catalog_raw_names then

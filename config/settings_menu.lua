@@ -204,6 +204,28 @@ function SettingsMenu.create(plugin)
 					},
 				},
 				{
+					text = _("Downloads"),
+					sub_item_table = {
+						{
+							text = _("Filename: Title - Author"),
+							checked_func = function()
+								return plugin.settings.filename_title_first == true
+							end,
+							callback = function()
+								plugin.settings.filename_title_first = not plugin.settings.filename_title_first
+								plugin.opds_settings:saveSetting("settings", plugin.settings)
+								plugin.opds_settings:flush()
+								local fmt = plugin.settings.filename_title_first
+									and _("Title - Author") or _("Author - Title")
+								UIManager:show(InfoMessage:new {
+									text = T(_("Filename format set to: %1"), fmt),
+									timeout = 2,
+								})
+							end,
+						},
+					},
+				},
+				{
 					text = _("Developer"),
 					sub_item_table = {
 						{

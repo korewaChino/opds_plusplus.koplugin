@@ -175,7 +175,11 @@ function BookInfoDialog.build(browser, item)
 	-- Initialize with default filename
 	local base_filename = item.title
 	if item.author then
-		base_filename = item.author .. " - " .. base_filename
+		if browser.settings.filename_title_first then
+			base_filename = base_filename .. " - " .. item.author
+		else
+			base_filename = item.author .. " - " .. base_filename
+		end
 	end
 	if browser.root_catalog_raw_names then
 		browser._custom_filename = nil
@@ -641,7 +645,11 @@ function BookInfoDialog.showDownloadOptionsDialog(browser, item)
 	-- Generate original filename for reset
 	local filename_orig = item.title
 	if item.author then
-		filename_orig = item.author .. " - " .. filename_orig
+		if browser.settings.filename_title_first then
+			filename_orig = filename_orig .. " - " .. item.author
+		else
+			filename_orig = item.author .. " - " .. filename_orig
+		end
 	end
 	filename_orig = util.replaceAllInvalidChars(filename_orig)
 
