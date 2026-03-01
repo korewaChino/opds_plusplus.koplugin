@@ -212,76 +212,60 @@ end
 -- @param dl_list table List of items to download
 -- @return table|nil List of duplicate files or nil
 function DownloadManager.downloadPendingSyncs(browser, dl_list)
-	local function dismissable_download()
-		local info = InfoMessage:new { text = _("Downloading… (tap to cancel)") }
-		UIManager:show(info)
-		UIManager:forceRePaint()
+	local total = #dl_list
+	local dl_count = 0
+	local duplicate_list = {}
 
-		local completed, downloaded, duplicate_list = Trapper:dismissableRunInSubprocess(function()
-			local dl = {}
-			local dupe_list = {}
-			for _, item in ipairs(dl_list) do
-				if browser.sync_server_list[item.catalog] then
-					if lfs.attributes(item.file) and not browser.sync_force then
-						table.insert(dupe_list, item)
-					else
-						if DownloadManager.downloadFile(browser, item.file, item.url, item.username, item.password) then
-							dl[item.file] = true
-						end
-					end
+	for i, item in ipairs(dl_list) do
+		if browser.sync_server_list[item.catalog] then
+			if lfs.attributes(item.file) and not browser.sync_force then
+				table.insert(duplicate_list, item)
+			else
+				-- Show progress and check for cancellation
+				local go_on = Trapper:info(
+					T(_("Downloading %1 / %2… (tap to cancel)"), i, total),
+					false -- not fast refresh
+				)
+				if not go_on then
+					break
 				end
-			end
-			return dl, dupe_list
-		end, info)
 
-		if completed then
-			UIManager:close(info)
-		end
-
-		local dl_count = 0
-		local dl_size = #dl_list
-		for i = dl_size, 1, -1 do
-			local item = dl_list[i]
-			if downloaded and downloaded[item.file] then
-				dl_count = dl_count + 1
-				table.remove(dl_list, i)
-			else -- if subprocess has been interrupted, check for the downloaded file
-				local attr = lfs.attributes(item.file)
-				if attr then
-					if attr.size > 0 then
-						table.remove(dl_list, i)
-						-- Only count files touched within the freshness window
-						if attr.modification > os.time() - Constants.SYNC.DOWNLOAD_FRESHNESS_SECONDS then
-							dl_count = dl_count + 1
-						end
-					else -- incomplete download
-						os.remove(item.file)
-					end
+				if DownloadManager.downloadFile(browser, item.file, item.url, item.username, item.password) then
+					dl_count = dl_count + 1
 				end
 			end
 		end
-
-		local duplicate_count = duplicate_list and #duplicate_list or 0
-		dl_count = dl_count - duplicate_count
-
-		-- Make downloaded count timeout if there's a duplicate file prompt
-		local timeout = nil
-		if duplicate_count > 0 then
-			timeout = Constants.UI_TIMING.DUPLICATE_NOTIFICATION_TIMEOUT
-		end
-
-		if dl_count > 0 then
-			UIManager:show(InfoMessage:new {
-				text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count),
-				timeout = timeout,
-			})
-		end
-
-		StateManager.getInstance():markDirty()
-		return duplicate_list
 	end
 
-	return dismissable_download()
+	-- Remove successfully downloaded items from the list
+	for i = #dl_list, 1, -1 do
+		local item = dl_list[i]
+		local attr = lfs.attributes(item.file)
+		if attr and attr.size > 0 then
+			table.remove(dl_list, i)
+		elseif attr then
+			-- incomplete download
+			os.remove(item.file)
+		end
+	end
+
+	local duplicate_count = #duplicate_list
+
+	-- Make downloaded count timeout if there's a duplicate file prompt
+	local timeout = nil
+	if duplicate_count > 0 then
+		timeout = Constants.UI_TIMING.DUPLICATE_NOTIFICATION_TIMEOUT
+	end
+
+	if dl_count > 0 then
+		UIManager:show(InfoMessage:new {
+			text = T(N_("1 book downloaded", "%1 books downloaded", dl_count), dl_count),
+			timeout = timeout,
+		})
+	end
+
+	StateManager.getInstance():markDirty()
+	return duplicate_count > 0 and duplicate_list or nil
 end
 
 -- Add item to download queue
