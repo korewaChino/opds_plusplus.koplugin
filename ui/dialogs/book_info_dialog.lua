@@ -44,7 +44,7 @@ local BookInfoDialog = {}
 -- @return string Formatted list of available formats
 local function formatAvailableFormats(acquisitions, DownloadManager)
 	local formats = {}
-	for _, acquisition in ipairs(acquisitions) do
+	for i, acquisition in ipairs(acquisitions) do
 		if acquisition.count then
 			-- PSE streaming
 			table.insert(formats, _("Stream") .. " (" .. acquisition.count .. " " .. _("pages") .. ")")
@@ -67,7 +67,7 @@ end
 -- @param acquisitions table List of acquisitions
 -- @return table|nil PSE acquisition or nil
 local function getPSEAcquisition(acquisitions)
-	for _, acquisition in ipairs(acquisitions) do
+	for i, acquisition in ipairs(acquisitions) do
 		if acquisition.count then
 			return acquisition
 		end
@@ -81,7 +81,7 @@ end
 -- @return table List of downloadable acquisitions with filetype
 local function getDownloadableAcquisitions(acquisitions, DownloadManager)
 	local downloadable = {}
-	for _, acquisition in ipairs(acquisitions) do
+	for i, acquisition in ipairs(acquisitions) do
 		if not acquisition.count and acquisition.type ~= "borrow" then
 			local filetype = DownloadManager.getFiletype(acquisition)
 			if filetype then
@@ -105,7 +105,7 @@ local function showFormatSelectionDialog(browser, item, downloadable, add_to_que
 	local DownloadManager = require("core.download_manager")
 	local buttons = {}
 
-	for _, dl in ipairs(downloadable) do
+	for i, dl in ipairs(downloadable) do
 		local text = url.unescape(dl.acquisition.title or string.upper(dl.filetype))
 		table.insert(buttons, {
 			{
@@ -327,7 +327,7 @@ function BookInfoDialog.build(browser, item)
 	end
 
 	local info_text_parts = {}
-	for _, part in ipairs(info_parts) do
+	for i, part in ipairs(info_parts) do
 		table.insert(info_text_parts, TextBoxWidget.PTF_BOLD_START .. part.label .. ":" .. TextBoxWidget.PTF_BOLD_END)
 		table.insert(info_text_parts, " " .. part.value .. "\n")
 	end
