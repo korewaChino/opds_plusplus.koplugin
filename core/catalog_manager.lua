@@ -41,6 +41,14 @@ function CatalogManager.editCatalogFromInput(servers, item_table, fields, item, 
 		sync_dir  = fields[7] ~= "" and fields[7] or nil,
 	}
 
+	-- When editing, preserve fields that aren't part of the edit form
+	if item then
+		local old_server = servers[item.idx - 1]
+		if old_server then
+			new_server.last_download = old_server.last_download
+		end
+	end
+
 	local new_item = CatalogUtils.buildRootEntry(new_server)
 	local new_idx, itemnumber
 
