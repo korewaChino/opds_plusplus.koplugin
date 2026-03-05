@@ -1,4 +1,4 @@
-![OPDS Plus Banner](.github/assets/hero_banner.png)
+![OPDS++ Banner](.github/assets/hero_banner.png)
 
 <div align="center">
 
@@ -9,11 +9,13 @@
 
 </div>
 
-# OPDS Plus - Enhanced OPDS Browser for KOReader
+# OPDS++ - Cappy's personal slop fork of the OPDS plugin for KOReader
 
-**Version:** 1.1.0
+**Version:** 1.2.0
 
-**OPDS Plus** is a feature-rich enhancement of KOReader's built-in OPDS catalog browser, providing visual book cover displays, multiple viewing modes, and extensive customization options for browsing online book catalogs.
+**OPDS++** is a feature-rich enhancement of KOReader's built-in OPDS catalog browser, providing visual book cover displays, multiple viewing modes, and improvements for sync management. It offers a more immersive and customizable experience for browsing OPDS catalogs on your e-reader.
+
+Disclaimer: this is a slop fork, which means most of the code here is AI-generated and may not be fully functional or optimized. Use at your own risk. I personally forked it to add better download management and study the codebase. Contributions are welcome if you wish to improve the code quality and functionality.
 
 ## ✨ Features
 
@@ -55,6 +57,13 @@
 - Internet Archive
 - textos.info (Spanish)
 - Gallica (French)
+
+### Improved Sync Management
+
+- Per-catalog sync directories for better organization
+- Sub-catalogs get their own sync folders to prevent clutter
+- Numeric download progress indicators for better feedback during downloads
+- Ability to switch naming format for downloaded books (`Title - Author` or `Author - Title`), very useful for sorting multi-volume works from OPDS feeds for invidual manga chapters as separate books (Komga, Mihon, etc.)
 
 ## 📸 Screenshots
 
